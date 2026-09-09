@@ -129,7 +129,7 @@ def cmd_publish(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     try:
-        manifest = json.loads(manifest_path.read_text())
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
         print(f"❌ Invalid manifest.json: {e}", file=sys.stderr)
         sys.exit(1)
@@ -229,7 +229,7 @@ def cmd_publish(args: argparse.Namespace) -> None:
             return
 
         manifest["version"] = new_version
-        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"   Updated manifest.json version to {new_version}")
         version = new_version
         try:

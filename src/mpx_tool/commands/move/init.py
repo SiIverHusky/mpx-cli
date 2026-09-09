@@ -14,12 +14,14 @@ _RES = importlib.resources.files("mpx_tool.commands.resource.move")
 def _read_resource(name: str) -> str:
     ref = _RES / name
     with importlib.resources.as_file(ref) as path:
-        return Path(path).read_text()
+        # Templates are UTF-8 (e.g. mpx_host.h leads with a box-drawing banner).
+        # Read explicitly so Windows' default cp1252 codec isn't used.
+        return Path(path).read_text(encoding="utf-8")
 
 
 def _write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content.lstrip("\n"))
+    path.write_text(content.lstrip("\n"), encoding="utf-8")
     try:
         rel = path.relative_to(Path.cwd())
     except ValueError:

@@ -26,7 +26,9 @@ _RES = importlib.resources.files("mpx_tool.commands.resource.web")
 def _read_resource(name: str) -> str:
     ref = _RES / name
     with importlib.resources.as_file(ref) as path:
-        return Path(path).read_text()
+        # Vendored templates are UTF-8; read explicitly so Windows' default
+        # cp1252 codec doesn't raise UnicodeDecodeError on non-ASCII content.
+        return Path(path).read_text(encoding="utf-8")
 
 
 def _prompt(question: str, default: str = "") -> str:
@@ -90,12 +92,12 @@ def cmd_web_init(args: argparse.Namespace) -> None:
     manifest_content = manifest_content.replace("{{DOMAIN}}", domain)
     manifest_content = manifest_content.replace("{{SLUG}}", slug)
     manifest_content = manifest_content.replace("{{VERSION}}", version)
-    (target_dir / "manifest.json").write_text(manifest_content)
+    (target_dir / "manifest.json").write_text(manifest_content, encoding="utf-8")
 
     skill_content = _read_resource("skill.js").replace("{{DOMAIN}}", domain)
-    (target_dir / "skill.js").write_text(skill_content)
+    (target_dir / "skill.js").write_text(skill_content, encoding="utf-8")
 
-    (target_dir / "GUIDE.md").write_text(_read_resource("GUIDE.md"))
+    (target_dir / "GUIDE.md").write_text(_read_resource("GUIDE.md"), encoding="utf-8")
 
     print(f"\n  ✓ Created directory: {raw}/")
     print(f"  ✓ Created: {raw}/manifest.json")
