@@ -8,8 +8,12 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
+
+from mpx_tool.config import GCS_EMULATOR_IMAGE as _GCS_IMAGE
+from mpx_tool.config import WEB_WORKER_IMAGE as _WORKER_IMAGE
 from pathlib import Path
 
 import importlib.resources
@@ -73,12 +77,20 @@ def _compose_file() -> Path:
         return Path(path)
 
 
+def _compose_env() -> dict[str, str]:
+    """Image env overrides so compose uses the same pins as the CLI."""
+    env = os.environ.copy()
+    env.setdefault("MPX_WEB_WORKER_IMAGE", _WORKER_IMAGE)
+    env.setdefault("MPX_GCS_EMULATOR_IMAGE", _GCS_IMAGE)
+    return env
+
+
 def compose_up(project_name: str = "mpx-web") -> None:
     """Start the web runtime stack (worker + GCS emulator)."""
     compose = _compose_file()
     print("  ▶️  Starting web runtime (AWA worker + GCS emulator)...")
     cmd = [DOCKER_BIN, "compose", "-p", project_name, "-f", str(compose), "up", "-d"]
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, env=_compose_env())
     if result.returncode != 0:
         raise DockerError("docker compose up failed")
     print("  ✅ Web runtime is up — worker http://localhost:9808, GCS http://localhost:4443")
@@ -89,7 +101,7 @@ def compose_down(project_name: str = "mpx-web") -> None:
     compose = _compose_file()
     print("  ⏹  Stopping web runtime...")
     cmd = [DOCKER_BIN, "compose", "-p", project_name, "-f", str(compose), "down"]
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, env=_compose_env())
     if result.returncode != 0:
         raise DockerError("docker compose down failed")
     print("  ✅ Web runtime stopped.")

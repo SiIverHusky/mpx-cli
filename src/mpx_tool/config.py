@@ -36,12 +36,12 @@ LEGACY_FILES = [
     Path.home() / ".mpx-awa-state.json",
 ]
 
-# ── Pinned Docker images (Decision #8: tentative until first push)
+# ── Pinned Docker images (Decision #8: silverhusky personal hub for now)
 MOVE_TOOLCHAIN_IMAGE = os.environ.get(
-    "MPX_MOVE_TOOLCHAIN_IMAGE", "mangdang/mpx-move-toolchain:latest"
+    "MPX_MOVE_TOOLCHAIN_IMAGE", "silverhusky/mpx-move-toolchain:0.1.0"
 )
 WEB_WORKER_IMAGE = os.environ.get(
-    "MPX_WEB_WORKER_IMAGE", "mangdang/mpx-web-worker:latest"
+    "MPX_WEB_WORKER_IMAGE", "silverhusky/mpx-web-worker:0.1.0"
 )
 GCS_EMULATOR_IMAGE = os.environ.get(
     "MPX_GCS_EMULATOR_IMAGE", "fsouza/fake-gcs-server:latest"

@@ -20,7 +20,7 @@ services:
       - mpx-gcs-data:/storage
 
   awa-worker:
-    image: ${MPX_WEB_WORKER_IMAGE:-mangdang/mpx-web-worker:latest}
+    image: ${MPX_WEB_WORKER_IMAGE:-silverhusky/mpx-web-worker:0.1.0}
     container_name: mpx-awa-worker
     depends_on:
       - gcs

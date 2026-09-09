@@ -243,8 +243,13 @@ def cmd_move_build(args: argparse.Namespace) -> None:
     cwd = Path.cwd()
 
     use_docker = (not args.local) and docker_available()
-    if not args.local and not docker_available():
-        print("⚠️  Docker not available — using local toolchains (fallback).")
+    if use_docker:
+        print(f"  🔨 Building in Docker image: {MOVE_TOOLCHAIN_IMAGE}")
+    else:
+        if args.local:
+            print("  🖥️  Building with local toolchains (--local)")
+        else:
+            print("  ⚠️  Docker not available — using local toolchains (fallback).")
 
     try:
         if use_docker:
