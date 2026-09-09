@@ -34,8 +34,12 @@ def _run(cmd: list[str], check: bool = True, capture: bool = False) -> subproces
         raise DockerError("Docker not found on PATH. Install Docker Desktop / Engine.")
     result = subprocess.run(cmd, capture_output=capture, text=True)
     if check and result.returncode != 0:
-        raise DockerError(f"docker command failed ({' '.join(cmd[:2])}…): "
-                          f"{result.stderr.strip() or result.stdout.strip()}")
+        # When not capturing, stdout/stderr are None (output went straight to
+        # the terminal) — don't crash trying to read them.
+        err = result.stderr.strip() if result.stderr else ""
+        out = result.stdout.strip() if result.stdout else ""
+        detail = err or out or f"exit code {result.returncode}"
+        raise DockerError(f"docker command failed ({' '.join(cmd[:2])}…): {detail}")
     return result
 
 

@@ -73,11 +73,16 @@ def _default_build_output(source: Path) -> Path:
 
 
 def _rel_path(path: Path, cwd: Path) -> str:
-    """Path relative to cwd, or absolute if outside."""
+    """Path relative to cwd using POSIX separators, or absolute if outside.
+
+    The result is embedded into container-side paths like ``/work/<rel>``
+    and handed to Linux tools (clang/wat2wasm/asc), so it must always use
+    forward slashes even on Windows (where ``Path`` uses backslashes).
+    """
     try:
-        return str(path.resolve().relative_to(cwd))
+        return path.resolve().relative_to(cwd).as_posix()
     except ValueError:
-        return str(path.resolve())
+        return path.resolve().as_posix()
 
 
 def _compile_in_docker(source: Path, output: Path, cwd: Path) -> None:
@@ -256,8 +261,13 @@ def cmd_move_build(args: argparse.Namespace) -> None:
             _compile_in_docker(source, output, cwd)
         else:
             _compile_local(source, output, cwd)
-    except (DockerError, SystemExit):
+    except SystemExit:
         raise
+    except DockerError as e:
+        # Compiler diagnostics (if any) were already streamed to the terminal;
+        # surface a clean failure instead of a traceback.
+        print(f"❌ Build failed: {e}")
+        raise SystemExit(1)
     except Exception as e:  # pragma: no cover — defensive
         print(f"❌ Build failed: {e}")
         raise SystemExit(1)
