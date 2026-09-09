@@ -52,6 +52,7 @@ _MOVE = {
     "upload": cmd_move_upload,
     "run": cmd_move_run,
     "list": cmd_move_list,
+    "ls": cmd_move_list,  # argparse alias — parser stores the literal name typed
     "delete": cmd_move_delete,
 }
 
@@ -131,11 +132,11 @@ def main(argv: list[str] | None = None) -> None:
 
     try:
         if args.command in _SHARED:
-            _SHARED[args.command](args)
+            _handle(parser, args, _SHARED, args.command, "command")
         elif args.command == "move":
-            _MOVE[args.move_command](args)
+            _handle(parser, args, _MOVE, args.move_command, "move command")
         elif args.command == "web":
-            _WEB[args.web_command](args)
+            _handle(parser, args, _WEB, args.web_command, "web command")
         else:  # pragma: no cover
             parser.error(f"unknown command: {args.command}")
     except KeyboardInterrupt:
@@ -143,11 +144,31 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(130)
 
 
+def _handle(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+    handlers: dict[str, object],
+    name: str,
+    what: str,
+) -> None:
+    """Invoke a command handler, failing gracefully on an unknown name.
+
+    argparse accepts aliases (e.g. ``move ls`` for ``move list``), and the
+    parser stores the literal name that was typed — so ``args.move_command``
+    can hold a spelling that isn't (yet) a canonical key. Rather than a raw
+    ``KeyError`` traceback, fall back to argparse's own usage/exit-2 message.
+    """
+    handler = handlers.get(name)
+    if handler is None:
+        parser.error(f"unknown {what}: {name}")
+    handler(args)
+
+
 # ── Transitional legacy entry points (design doc §5.4) ──────────
 
 _LEGACY_NOTICE = "⚠️  '{prog}' is deprecated — use 'mpx' instead."
 
-_MOVE_CMDS = {"init", "build", "upload", "run", "list", "delete"}
+_MOVE_CMDS = {"init", "build", "upload", "run", "list", "ls", "delete"}
 _WEB_CMDS = {"init", "seed", "session", "readme", "list", "delete", "up", "down"}
 _SHARED_CMDS = {"login", "signup", "logout", "publish", "search", "info", "versions"}
 
