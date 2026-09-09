@@ -14,6 +14,7 @@ from mpx_tool.sdk.docker import (
     compose_up,
     ensure_image,
 )
+from mpx_tool.sdk.gcs import GcsClient
 
 
 def add_web_runtime_parsers(sub: argparse._SubParsersAction) -> None:
@@ -29,6 +30,15 @@ def cmd_web_up(args: argparse.Namespace) -> None:
     except DockerError as e:
         print(f"❌ {e}")
         raise SystemExit(1)
+
+    # fake-gcs-server starts with an empty data volume — create the
+    # skills bucket if it doesn't already exist, so seed/list/delete work.
+    client = GcsClient()
+    try:
+        client.ensure_bucket()
+        print(f'  ✅ GCS bucket "{client.bucket}" ready')
+    except Exception as e:  # noqa: BLE001 — surface a clear warning, not a crash
+        print(f'  ⚠️  Could not create GCS bucket "{client.bucket}": {e}')
 
 
 def cmd_web_down(args: argparse.Namespace) -> None:

@@ -51,6 +51,37 @@ class GcsClient:
         except URLError as e:
             raise GcsError(f"GCS request failed ({method} {url}): {e}") from e
 
+    # ── Buckets ─────────────────────────────────────────────────
+
+    def bucket_exists(self) -> bool:
+        """Return True if the target bucket exists in the (emulator) store."""
+        url = f"{self._base}/storage/v1/b/{self.bucket}"
+        try:
+            status, _ = self._send("GET", url)
+        except GcsError:
+            return False
+        return status == 200
+
+    def create_bucket(self) -> None:
+        """Create the target bucket (fake-gcs-server JSON API)."""
+        url = f"{self._base}/storage/v1/b"
+        payload = __import__("json").dumps({"name": self.bucket}).encode("utf-8")
+        status, _ = self._send("POST", url, data=payload, content_type="application/json")
+        # fake-gcs-server returns 200 on create; 409 if it already exists.
+        if status not in (200, 409):
+            raise GcsError(f"Bucket {self.bucket!r} creation failed (HTTP {status})")
+
+    def ensure_bucket(self) -> None:
+        """Create the bucket if it does not yet exist (idempotent).
+
+        fake-gcs-server starts with an empty data volume, so the skills
+        bucket must be created on first use. Real GCS buckets already
+        exist by the time this code would be pointed at them, so this is
+        a no-op there.
+        """
+        if not self.bucket_exists():
+            self.create_bucket()
+
     # ── Objects ──────────────────────────────────────────────────
 
     def upload(self, object_name: str, content: bytes, content_type: str) -> None:

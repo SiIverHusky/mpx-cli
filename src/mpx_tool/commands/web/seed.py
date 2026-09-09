@@ -32,6 +32,10 @@ def cmd_web_seed(args: argparse.Namespace) -> None:
     print(f"  Bucket: {client.bucket}")
 
     try:
+        # Ensure the GCS bucket exists before uploading (fake-gcs-server
+        # starts empty and we want a fresh 'mpx web up && mpx web seed'
+        # to just work).
+        client.ensure_bucket()
         client.upload(
             f"user-scripts/{args.domain}/manifest.json",
             manifest_path.read_bytes(),
