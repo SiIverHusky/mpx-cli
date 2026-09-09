@@ -1,0 +1,47 @@
+# ── Python ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# ── Virtual environments ────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Packaging / publishing ──────────────────────────────────────
+wheelhouse/
+*.whl
+*.tar.gz
+MANIFEST
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── Local state / secrets ───────────────────────────────────────
+.env
+.env.*
+!.env.sample
+
+# Local editor/PyPI test config files
+.pypirc
+twine/
+.token
+
+# ── Editor / IDE ────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
