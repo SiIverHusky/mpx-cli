@@ -15,6 +15,7 @@ import json
 import sys
 from pathlib import Path
 
+from mpx_tool.manifest import parse_semver, write_manifest
 from mpx_tool.sdk.auth import (
     get_username_from_token,
     read_state,
@@ -44,11 +45,7 @@ def add_publish_parser(sub: argparse._SubParsersAction) -> None:
 
 # ── Semver helpers ──────────────────────────────────────────────
 
-def _parse_semver(v: str) -> tuple[int, int, int] | None:
-    parts = v.split(".")
-    if len(parts) != 3 or not all(p.isdigit() for p in parts):
-        return None
-    return int(parts[0]), int(parts[1]), int(parts[2])
+_parse_semver = parse_semver  # kept for backward-compatible imports
 
 
 def _prompt_semver_bump(current_version: str) -> str | None:
@@ -229,7 +226,7 @@ def cmd_publish(args: argparse.Namespace) -> None:
             return
 
         manifest["version"] = new_version
-        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        write_manifest(manifest_path, manifest)
         print(f"   Updated manifest.json version to {new_version}")
         version = new_version
         try:
