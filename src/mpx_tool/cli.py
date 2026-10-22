@@ -8,6 +8,9 @@ Command surface (design doc §5):
 
   mpx move init|build|upload|run|list|delete   # robot (WASM) skills
   mpx web  init|seed|list|delete|readme|session|up|down  # web (AWA) skills
+
+  mpx update-manifest [dir]            # shared manifest metadata editor
+                                       # (also: mpx move|web update-manifest)
 """
 
 from __future__ import annotations
@@ -19,6 +22,7 @@ import argparse
 from mpx_tool import __version__
 from mpx_tool.commands.auth import add_auth_parsers, cmd_login, cmd_logout, cmd_signup
 from mpx_tool.commands.info import add_info_parser, cmd_info
+from mpx_tool.commands.manifest_cmd import add_update_manifest_parser, cmd_update_manifest
 from mpx_tool.commands.publish import add_publish_parser, cmd_publish
 from mpx_tool.commands.search import add_search_parser, cmd_search
 from mpx_tool.commands.versions import add_versions_parser, cmd_versions
@@ -44,6 +48,7 @@ _SHARED = {
     "search": cmd_search,
     "info": cmd_info,
     "versions": cmd_versions,
+    "update-manifest": cmd_update_manifest,
 }
 
 _MOVE = {
@@ -54,6 +59,7 @@ _MOVE = {
     "list": cmd_move_list,
     "ls": cmd_move_list,  # argparse alias — parser stores the literal name typed
     "delete": cmd_move_delete,
+    "update-manifest": cmd_update_manifest,
 }
 
 _WEB = {
@@ -62,6 +68,7 @@ _WEB = {
     "list": cmd_web_list,
     "delete": cmd_web_delete,
     "readme": cmd_web_readme,
+    "update-manifest": cmd_update_manifest,
     "session": cmd_web_session,
     "up": cmd_web_up,
     "down": cmd_web_down,
@@ -97,6 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_search_parser(sub)
     add_info_parser(sub)
     add_versions_parser(sub)
+    add_update_manifest_parser(sub)
 
     # ── move family (robot / WASM) ───────────────────────────────
     p_move = sub.add_parser("move", help="Robot (WASM) skill commands")
@@ -107,6 +115,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_move_run_parser(move_sub)
     add_move_list_parser(move_sub)
     add_move_delete_parser(move_sub)
+    add_update_manifest_parser(move_sub)
 
     # ── web family (merchant web / AWA) ──────────────────────────
     p_web = sub.add_parser("web", help="Web (AWA) skill commands")
@@ -116,6 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_web_list_parser(web_sub)
     add_web_delete_parser(web_sub)
     add_web_readme_parser(web_sub)
+    add_update_manifest_parser(web_sub)
     add_web_session_parser(web_sub)
     add_web_runtime_parsers(web_sub)
 
@@ -170,7 +180,7 @@ _LEGACY_NOTICE = "⚠️  '{prog}' is deprecated — use 'mpx' instead."
 
 _MOVE_CMDS = {"init", "build", "upload", "run", "list", "ls", "delete"}
 _WEB_CMDS = {"init", "seed", "session", "readme", "list", "delete", "up", "down"}
-_SHARED_CMDS = {"login", "signup", "logout", "publish", "search", "info", "versions"}
+_SHARED_CMDS = {"login", "signup", "logout", "publish", "search", "info", "versions", "update-manifest"}
 
 
 def _legacy_main(prog: str, family: str, argv: list[str] | None) -> None:
