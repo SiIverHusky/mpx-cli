@@ -95,10 +95,13 @@ This is where the agent learns **exactly** how to use each action. Each action e
 The agent reads this to understand exactly what params to pass and what to expect back.
 
 ```
-mpx-awa readme example.com                # View README + action docs
-mpx-awa readme example.com --json          # Raw JSON (for programmatic use)
-mpx-awa readme example.com --set "..."     # Update the free-form README
+mpx web readme <username>~<slug>          # View README + action docs
+mpx web readme <username>~<slug> --json    # Raw JSON (for programmatic use)
+mpx web update-manifest .                  # Edit the metadata that drives both
 ```
+
+The free-form `readme` summary is edited in `manifest.json` (or via
+`mpx web update-manifest .`), never through `readme` itself.
 
 **Tip**: The more precise your `actions` docs are, the better the agent can use your skill without guessing.
 

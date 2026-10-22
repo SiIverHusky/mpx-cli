@@ -7,10 +7,10 @@
 ## Quick Start
 
 ```bash
-mpx-cli build src/{name}.ts
-mpx-cli build src/{name}.ts --validate
-mpx-cli upload src/{name}.wasm
-mpx-cli run {name}.wasm
+mpx move build src/{name}.ts
+mpx move build src/{name}.ts --validate
+mpx move upload build/{name}.wasm
+mpx move run {name}.wasm
 ```
 
 ## Host Functions

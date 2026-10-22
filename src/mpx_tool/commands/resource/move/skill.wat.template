@@ -1,11 +1,11 @@
 ;; {name}.wat — MPX-Dog WASM Skill
 ;;
 ;; Compile:
-;;   mpx-cli build {name}.wat
+;;   mpx move build {name}.wat
 ;;
 ;; Upload & run:
-;;   mpx-cli upload {name}.wasm
-;;   mpx-cli run {name}.wasm
+;;   mpx move upload {name}.wasm
+;;   mpx move run {name}.wasm
 ;;
 ;; Imports below match the host functions registered in the
 ;; ESP32 firmware under the "env" module.

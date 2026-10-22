@@ -7,10 +7,10 @@
 ## Quick Start
 
 ```bash
-mpx-cli build src/{name}.wat
-mpx-cli build src/{name}.wat --validate
-mpx-cli upload src/{name}.wasm
-mpx-cli run {name}.wasm
+mpx move build src/{name}.wat
+mpx move build src/{name}.wat --validate
+mpx move upload build/{name}.wasm
+mpx move run {name}.wasm
 ```
 
 ## Host Functions

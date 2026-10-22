@@ -1,11 +1,11 @@
 /* {name}.c — MPX-Dog WASM Skill
  *
  * Compile:
- *   mpx-cli build {name}.c
+ *   mpx move build {name}.c
  *
  * Upload & run:
- *   mpx-cli upload {name}.wasm
- *   mpx-cli run {name}.wasm
+ *   mpx move upload {name}.wasm
+ *   mpx move run {name}.wasm
  */
 
 #include <string.h>

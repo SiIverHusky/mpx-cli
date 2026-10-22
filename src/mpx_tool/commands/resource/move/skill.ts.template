@@ -1,11 +1,11 @@
 // {name}.ts — MPX-Dog WASM Skill (AssemblyScript)
 //
 // Compile:
-//   mpx-cli build {name}.ts
+//   mpx move build {name}.ts
 //
 // Upload & run:
-//   mpx-cli upload {name}.wasm
-//   mpx-cli run {name}.wasm
+//   mpx move upload {name}.wasm
+//   mpx move run {name}.wasm
 
 import {{
     print, robot_gait, robot_delay_ms,

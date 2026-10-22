@@ -22,7 +22,7 @@
  * action expects and what it returns. Keep these docs in sync with your
  * handler implementations — the agent relies on them to dispatch correctly.
  *
- * View with:  mpx-awa readme {{DOMAIN}}
+ * View with:  mpx web readme <username>~{{SLUG}}
  * ──────────────────────────────────────────────────────────────────────────
  *
  * ── Customizing ───────────────────────────────────────────────────────────
