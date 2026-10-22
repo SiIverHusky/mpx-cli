@@ -1,0 +1,39 @@
+# {{SLUG}} — AWA skill for {{DOMAIN}}
+
+An **Agentic Web Actions (AWA)** skill: a JavaScript module that exposes action
+handlers an agent can dispatch against `{{DOMAIN}}`.
+
+## Files
+
+| File | Purpose |
+| --- | --- |
+| `manifest.json` | Marketplace + runtime metadata: `domain`, `slug`, `title`, `version`, `readme`, `actions`, `capabilities`, `urls`, `timeout`, `memoryLimitMB`. `mpx publish` ships this. |
+| `skill.js` | Handler implementations (`module.exports = { manifest, handlers }`). |
+| `GUIDE.md` | `$awa.*` API reference, manifest field table, and the metadata / README update checklist. |
+
+## Quick start
+
+```bash
+mpx web up                              # start worker + GCS (auto-pulls images)
+mpx web seed {{SLUG}}                   # upload this skill for local testing
+mpx web session start {{SLUG}} --robot <uuid>   # dispatch actions
+mpx publish .                           # publish v{{VERSION}} to the marketplace
+```
+
+Inspect the published metadata at any time:
+
+```bash
+mpx web readme <username>~{{SLUG}}
+```
+
+## Before you publish
+
+1. Implement the handlers in `skill.js` and keep the `actions` docs in
+   `manifest.json` matching them — the agent dispatches from those docs.
+2. Update `capabilities` and `urls` to match what the skill actually reaches.
+3. Update this README and `GUIDE.md` prose if behavior changed.
+4. Bump `version` in `manifest.json` (or run `mpx web update-manifest .`).
+5. `mpx publish .`
+
+See the last section of `GUIDE.md` — **"Updating this README and the manifest
+metadata"** — for the full field table and the shared `update-manifest` editor.

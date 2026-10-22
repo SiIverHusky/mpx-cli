@@ -1,36 +1,35 @@
-"""mpx move init — scaffold a robot (WASM) skill project."""
+"""mpx move init — scaffold a robot (WASM) skill project.
+
+Parity contract with ``mpx web init``: same prompts (slug / title / version),
+same ``--slug`` / ``--dir`` / ``--yes`` flags, same slug-collision check, same
+exit code on an existing directory, same console summary, and the manifest /
+README metadata contract embedded into the generated docs.
+"""
 
 from __future__ import annotations
 
 import argparse
-import json
+import sys
 from pathlib import Path
 
-import importlib.resources
+from mpx_tool.commands.scaffold import (
+    check_slug_collision,
+    derive_slug,
+    prompt,
+    read_resource,
+    report_scaffolded,
+    require_semver,
+    require_slug,
+    write_file,
+    write_manifest_file,
+)
+from mpx_tool.manifest import metadata_section
 
-_RES = importlib.resources.files("mpx_tool.commands.resource.move")
-
-
-def _read_resource(name: str) -> str:
-    ref = _RES / name
-    with importlib.resources.as_file(ref) as path:
-        # Templates are UTF-8 (e.g. mpx_host.h leads with a box-drawing banner).
-        # Read explicitly so Windows' default cp1252 codec isn't used.
-        return Path(path).read_text(encoding="utf-8")
-
-
-def _write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content.lstrip("\n"), encoding="utf-8")
-    try:
-        rel = path.relative_to(Path.cwd())
-    except ValueError:
-        rel = path.resolve()
-    print(f"  📝 Created {rel}")
+_RES = "mpx_tool.commands.resource.move"
 
 
 def add_move_init_parser(sub: argparse._SubParsersAction) -> None:
-    p = sub.add_parser("init", help="Scaffold a robot skill development project")
+    p = sub.add_parser("init", help="Scaffold a robot (WASM) skill project")
     p.add_argument("name", help="Skill name (e.g. my_skill)")
     p.add_argument(
         "--lang", "-l",
@@ -39,79 +38,99 @@ def add_move_init_parser(sub: argparse._SubParsersAction) -> None:
         help="Language: c (default), wat, or ts (AssemblyScript)",
     )
     p.add_argument("--dir", "-d", default=None, help="Output directory (default: ./<name>)")
+    p.add_argument("--slug", "-s", default=None, help="Marketplace slug (default: derived from name)")
+    p.add_argument("--title", "-t", default=None, help="Marketplace title (default: '<name> — MPX-Dog skill')")
+    p.add_argument("--version", default=None, help="Initial version (default: 1.0.0)")
+    p.add_argument("--yes", "-y", action="store_true", help="Accept defaults without prompting")
 
 
 def cmd_move_init(args: argparse.Namespace) -> None:
     name = args.name
     lang = args.lang
     out_dir = Path(args.dir) if args.dir else Path(name)
+    interactive = not args.yes
 
     if out_dir.exists():
-        print(f"❌ Directory '{out_dir}' already exists")
-        return
+        print(f'❌ Directory "{out_dir}" already exists.', file=sys.stderr)
+        sys.exit(1)
 
-    ext_map = {"c": "c", "wat": "wat", "ts": "ts"}
-    ext = ext_map[lang]
+    print(f'\n  📋 Scaffolding WASM skill for "{name}"\n')
 
-    print(f"🚀 Initializing robot skill project '{name}' in {out_dir}/")
-    print()
+    slug = require_slug(args.slug or prompt("Slug (short marketplace identifier)", derive_slug(name), enabled=interactive))
+    title = args.title or prompt("Title", f"{name} — MPX-Dog skill", enabled=interactive)
+    version = require_semver(args.version or prompt("Version", "1.0.0", enabled=interactive))
 
+    check_slug_collision(slug, getattr(args, "gateway_url", None))
+
+    out_dir.mkdir(parents=True, exist_ok=False)
+
+    # ── Sources + language-specific includes ─────────────────────
     src_dir = out_dir / "src"
-    src_dir.mkdir(parents=True, exist_ok=True)
-
-    templates = {
-        "c": _read_resource("skill.c.template"),
-        "wat": _read_resource("skill.wat.template"),
-        "ts": _read_resource("skill.ts.template"),
-    }
-    _write(src_dir / f"{name}.{ext}", templates[lang].format(name=name))
+    write_file(src_dir / f"{name}.{lang}", read_resource(_RES, f"skill.{lang}.template").format(name=name))
 
     include_dir = out_dir / "include"
-    include_dir.mkdir(parents=True, exist_ok=True)
-    if lang == "c":
-        _write(include_dir / "mpx_host.h", _read_resource("mpx_host.h"))
-    elif lang == "ts":
-        _write(include_dir / "mpx_env.ts", _read_resource("mpx_env.ts"))
-    elif lang == "wat":
-        _write(include_dir / "host_functions.md", _read_resource("host_functions_wat.md"))
+    include_resource = {
+        "c": ("mpx_host.h", "mpx_host.h"),
+        "ts": ("mpx_env.ts", "mpx_env.ts"),
+        "wat": ("host_functions.md", "host_functions_wat.md"),
+    }[lang]
+    include_name, include_template = include_resource
+    write_file(include_dir / include_name, read_resource(_RES, include_template))
 
-    readme_templates = {
-        "c": "README_c.md.template",
-        "wat": "README_wat.md.template",
-        "ts": "README_ts.md.template",
-    }
-    _write(out_dir / "README.md", _read_resource(readme_templates[lang]).format(name=name))
+    # ── Docs (README carries the shared metadata contract) ───────
+    readme = read_resource(_RES, f"README_{lang}.md.template").format(name=name)
+    readme = f"{readme.rstrip()}\n\n{metadata_section('WASM')}"
+    write_file(out_dir / "README.md", readme)
 
     makefile = (
         f"# {name} — MPX-Dog WASM Skill\n"
         f"# Convenience wrapper around mpx.\n\n"
         f"MPX_HOST ?= 192.168.2.1\n"
-        f"SRC := src/{name}.{ext}\n"
+        f"SRC := src/{name}.{lang}\n"
         f"WASM := build/{name}.wasm\n\n"
-        f".PHONY: build upload run clean\n\n"
+        f".PHONY: build upload run publish clean\n\n"
         f"build:\n"
         f"\tmpx move build $(SRC)\n\n"
         f"upload:\n"
         f"\tmpx move upload $(WASM) --ip $(MPX_HOST)\n\n"
         f"run:\n"
         f"\tmpx move run {name}.wasm --ip $(MPX_HOST)\n\n"
+        f"publish:\n"
+        f"\tmpx publish .\n\n"
         f"clean:\n"
         f"\trm -f build/*.wasm\n"
     )
-    _write(out_dir / "Makefile", makefile)
+    write_file(out_dir / "Makefile", makefile)
 
-    manifest = {
-        "slug": name,
-        "title": f"{name} — MPX-Dog skill",
-        "skill_type": "WASM",
-        "version": "1.0.0",
-        "readme": f"A WASM skill for the MPX-Dog quadruped robot.",
-    }
-    _write(out_dir / "manifest.json", json.dumps(manifest, indent=2) + "\n")
+    write_manifest_file(
+        out_dir / "manifest.json",
+        {
+            "slug": slug,
+            "title": title,
+            "skill_type": "WASM",
+            "source_language": lang,
+            "version": version,
+            "readme": "A WASM skill for the MPX-Dog quadruped robot.",
+        },
+    )
 
-    build_dir = out_dir / "build"
-    build_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "build").mkdir(parents=True, exist_ok=True)
 
-    print()
-    print(f"✅ Project '{name}' initialized! See {out_dir / 'README.md'} to get started.")
-    print("   Next: mpx move build " + f"{out_dir / 'src' / (name + '.' + ext)}")
+    report_scaffolded(
+        "move",
+        name,
+        what="WASM skill",
+        slug=slug,
+        title=title,
+        version=version,
+        language=lang,
+        doc="README.md",
+        rows=[
+            ("cd", str(out_dir)),
+            ("build", f"mpx move build src/{name}.{lang}"),
+            ("upload", f"mpx move upload build/{name}.wasm --ip <robot-ip>"),
+            ("run", f"mpx move run {name}.wasm --ip <robot-ip>"),
+            ("publish", "mpx publish ."),
+            ("docs", "README.md"),
+        ],
+    )
