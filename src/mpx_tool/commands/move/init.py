@@ -3,7 +3,7 @@
 Parity contract with ``mpx web init``: same prompts (slug / title / version),
 same ``--slug`` / ``--dir`` / ``--yes`` flags, same slug-collision check, same
 exit code on an existing directory, same console summary, and the manifest /
-README metadata contract embedded into the generated docs.
+GUIDE metadata contract embedded into the generated docs.
 """
 
 from __future__ import annotations
@@ -77,10 +77,10 @@ def cmd_move_init(args: argparse.Namespace) -> None:
     include_name, include_template = include_resource
     write_file(include_dir / include_name, read_resource(_RES, include_template))
 
-    # ── Docs (README carries the shared metadata contract) ───────
-    readme = read_resource(_RES, f"README_{lang}.md.template").format(name=name)
-    readme = f"{readme.rstrip()}\n\n{metadata_section('WASM')}"
-    write_file(out_dir / "README.md", readme)
+    # ── Docs (GUIDE carries the shared metadata contract) ────────
+    guide = read_resource(_RES, f"GUIDE_{lang}.md.template").format(name=name)
+    guide = f"{guide.rstrip()}\n\n{metadata_section('WASM')}"
+    write_file(out_dir / "GUIDE.md", guide)
 
     makefile = (
         f"# {name} — MPX-Dog WASM Skill\n"
@@ -124,13 +124,13 @@ def cmd_move_init(args: argparse.Namespace) -> None:
         title=title,
         version=version,
         language=lang,
-        doc="README.md",
+        doc="GUIDE.md",
         rows=[
             ("cd", str(out_dir)),
             ("build", f"mpx move build src/{name}.{lang}"),
             ("upload", f"mpx move upload build/{name}.wasm --ip <robot-ip>"),
             ("run", f"mpx move run {name}.wasm --ip <robot-ip>"),
             ("publish", "mpx publish ."),
-            ("docs", "README.md"),
+            ("docs", "GUIDE.md"),
         ],
     )
