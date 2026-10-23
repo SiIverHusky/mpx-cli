@@ -7,9 +7,9 @@ Usage:
 Parity contract with ``mpx move init``: same prompts (slug / title / version),
 same ``--slug`` / ``--dir`` / ``--yes`` flags, same slug-collision check, same
 exit code on an existing directory, same console summary, and the manifest /
-README metadata contract embedded into the generated docs.
+GUIDE metadata contract embedded into the generated docs.
 
-Creates manifest.json, skill.js, README.md and GUIDE.md in ./<domain>/.
+Creates manifest.json, skill.js and GUIDE.md in ./<domain>/.
 """
 
 from __future__ import annotations
@@ -94,10 +94,6 @@ def cmd_web_init(args: argparse.Namespace) -> None:
     guide = read_resource(_RES, "GUIDE.md")
     write_file(target_dir / "GUIDE.md", f"{guide.rstrip()}\n\n{metadata_section('AWA')}")
 
-    readme = read_resource(_RES, "README.md.template").replace("{{DOMAIN}}", domain)
-    readme = readme.replace("{{SLUG}}", slug).replace("{{VERSION}}", version)
-    write_file(target_dir / "README.md", readme)
-
     report_scaffolded(
         "web",
         raw,
@@ -113,6 +109,6 @@ def cmd_web_init(args: argparse.Namespace) -> None:
             ("seed", f"mpx web seed {raw}"),
             ("test", f"mpx web session start {slug} --robot <uuid>"),
             ("publish", "mpx publish ."),
-            ("docs", "GUIDE.md, README.md"),
+            ("docs", "GUIDE.md"),
         ],
     )
