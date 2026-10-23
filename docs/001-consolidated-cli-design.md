@@ -117,7 +117,7 @@ mpx-tool/
 │       │       └── session.py
 │       │   └── resource/        # vendored templates + SDK headers (see §4.1)
 │       │       ├── move/        # copied from mpx-sdk at packaging: mpx_host.h, mpx_env.ts,
-│       │       │                #   *.template, host_functions*.md, GUIDE/README templates
+│       │       │                #   *.template, host_functions*.md, GUIDE templates
 │       │       └── web/         # copied from mpx-cloud-sdk: skill.js, manifest.json, GUIDE.md
 │       │                        #   templates + handlers/helpers
 ```
@@ -253,7 +253,7 @@ family-specific file payload, so a developer learning one already knows the othe
 | Existing dir | `❌ Directory "…" already exists.` and exit code `1` |
 | Output | `✓ Created …` per file, then Configuration / Next steps / Metadata summary |
 | Manifest | `slug`, `title`, `skill_type`, `source_language`, `version`, `readme` (+ web-only `domain`, `actions`, `capabilities`, `urls`, `timeout`, `memoryLimitMB`) |
-| Docs | move → `README.md`; web → `GUIDE.md` + `README.md`. Both carry the generated **"Updating this README and the manifest metadata"** section (field table + change checklist + `update-manifest` usage) |
+| Docs | move and web → `GUIDE.md`. Both carry the generated **"Updating this GUIDE and the manifest metadata"** section (field table + change checklist + `update-manifest` usage) |
 
 Shared code lives in `src/mpx_tool/commands/scaffold.py` (prompts, resource loading,
 file writer, slug derivation/collision check, summary printer) and

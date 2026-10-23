@@ -3,8 +3,8 @@
 Both families produce the same project skeleton contract:
 
   manifest.json  — marketplace metadata (see ``mpx_tool.manifest``)
-  <doc>.md       — README.md (move) / GUIDE.md (web), including the embedded
-                   "Updating this README and the manifest metadata" section
+  <doc>.md       — GUIDE.md, including the embedded
+                   "Updating this GUIDE and the manifest metadata" section
   a family-specific source/artifact layout
 
 Keeping the prompts, slug derivation, collision check, file writer and console
@@ -152,6 +152,6 @@ def report_scaffolded(
     print()
     print("  Metadata:")
     print(f"    Edit manifest.json — field table in {doc}")
-    print('    → "Updating this README and the manifest metadata"')
+    print('    → "Updating this GUIDE and the manifest metadata"')
     print(f"    Or edit interactively:  mpx {family} update-manifest <dir>")
     print()

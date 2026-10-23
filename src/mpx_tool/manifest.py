@@ -62,26 +62,43 @@ def family_label(manifest: dict) -> str:
 # ── Docs embedded into scaffolded projects ───────────────────────
 
 _FIELD_ROWS = (
-    ("`slug`", "both", "Skill id is `username~slug`. Locked to a family (`WASM` vs `AWA`) on first publish."),
-    ("`title`", "both", "Listing name in the marketplace."),
-    ("`version`", "both", "Must be `X.Y.Z`. `mpx publish` offers a bump when the version already exists and rewrites this file."),
-    ("`readme`", "both", "One-paragraph summary surfaced by `mpx web readme <username~slug>`."),
-    ("`skill_type`", "both", "Family routing inside `mpx publish`."),
-    ("`source_language`", "both", "Reported language (`c` / `wat` / `ts`, or `javascript`)."),
-    ("`domain`", "web", "Site this skill drives (AWA routing)."),
-    ("`actions`", "web", "Per-action params / returns / examples — the agent dispatches from these."),
-    ("`capabilities`", "web", "Action names advertised to the agent."),
-    ("`urls`", "web", "Known URL templates (documentation / reference)."),
-    ("`timeout` / `memoryLimitMB`", "web", "Runtime caps enforced by the sandbox."),
+    ("`slug`", "Skill id is `username~slug`; immutable once published."),
+    ("`title`", "Listing name in the marketplace."),
+    ("`version`", "Must be `X.Y.Z`. `mpx publish` offers a bump when the version already exists and rewrites this file."),
+    ("`readme`", "One-paragraph summary surfaced in the marketplace listing."),
+    ("`skill_type`", "{skill_type} — selects how `mpx publish` validates and ships this skill."),
+    ("`source_language`", "{language}"),
 )
 
-_DOC_SECTION = """## Updating this README and the manifest metadata
+_WEB_FIELD_ROWS = (
+    ("`domain`", "Site this skill drives (AWA routing)."),
+    ("`actions`", "Per-action params / returns / examples — the agent dispatches from these."),
+    ("`capabilities`", "Action names advertised to the agent."),
+    ("`urls`", "Known URL templates (documentation / reference)."),
+    ("`timeout` / `memoryLimitMB`", "Runtime caps enforced by the sandbox."),
+)
+
+# Per-family wording: each scaffolded GUIDE only ever describes its own family.
+_MOVE_DOC = {
+    "skill_type": "`WASM`",
+    "language": "Source language of the skill: `c`, `wat` or `ts`.",
+    "command": "mpx move update-manifest .",
+    "example_readme": "Faster gait start",
+}
+_WEB_DOC = {
+    "skill_type": "`AWA`",
+    "language": "`javascript` — fixed for web skills.",
+    "command": "mpx web update-manifest .",
+    "example_readme": "Now supports checkout",
+}
+
+_DOC_SECTION = """## Updating this GUIDE and the manifest metadata
 
 `{manifest}` is the source of truth: `mpx publish` reads it, so anything stale
 there is what users and agents see. Keep this file and the manifest in sync.
 
-| Field | Family | Effect |
-| --- | --- | --- |
+| Field | Effect |
+| --- | --- |
 {rows}
 
 ### Checklist when you change the skill
@@ -90,18 +107,17 @@ there is what users and agents see. Keep this file and the manifest in sync.
 
 ### Editing metadata
 
-Both families share one editor command:
+One command edits every field:
 
 ```bash
-mpx move update-manifest .        # in a WASM project
-mpx web  update-manifest .        # in a web project
+{command}
 ```
 
 It prompts for each editable field with the current value as the default — press
 Enter to keep it. For scripted updates, pass flags instead of prompting:
 
 ```bash
-mpx update-manifest . --version 1.2.0 --readme "Now supports checkout"
+{command} --version 1.2.0 --readme "{example_readme}"
 ```
 
 Editing by hand is fine too — just re-run `mpx publish .` afterwards so the
@@ -120,7 +136,7 @@ _CHECKLIST = {
     "web": (
         "Bump `version` in `{manifest}` (or let `mpx publish` bump it on conflict).",
         "Update the `readme` one-liner if the skill's purpose changed.",
-        "Keep the handler docs in `GUIDE.md` and the `actions` descriptions in `{manifest}` in sync.",
+        "Keep the handler docs above and the `actions` descriptions in `{manifest}` in sync.",
         "Update `actions` / `capabilities` / `urls` whenever behavior or reachable pages change — the agent dispatches from them.",
         "Update this doc's own prose — it is what a human reads first.",
         "`mpx publish .` to ship.",
@@ -132,11 +148,12 @@ def metadata_section(skill_type: str, manifest_name: str = MANIFEST_NAME) -> str
     """Markdown block documenting manifest fields, for a scaffolded project."""
     wasm = str(skill_type).upper() in WASM_TYPES
     family = "move" if wasm else "web"
-    rows = []
-    for field, scope, effect in _FIELD_ROWS:
-        if scope == "web" and wasm:
-            continue
-        rows.append(f"| {field} | {scope} | {effect} |")
+    doc = _MOVE_DOC if wasm else _WEB_DOC
+    field_rows = _FIELD_ROWS if wasm else (_FIELD_ROWS + _WEB_FIELD_ROWS)
+    rows = [
+        "| {} | {} |".format(field, effect.format(**doc))
+        for field, effect in field_rows
+    ]
     body = _DOC_SECTION.format(
         manifest=manifest_name,
         rows="\n".join(rows),
@@ -144,5 +161,7 @@ def metadata_section(skill_type: str, manifest_name: str = MANIFEST_NAME) -> str
             f"{i}. {line.format(manifest=manifest_name)}"
             for i, line in enumerate(_CHECKLIST[family], start=1)
         ),
+        command=doc["command"],
+        example_readme=doc["example_readme"],
     )
     return body

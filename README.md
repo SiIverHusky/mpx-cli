@@ -1,6 +1,7 @@
 # mpx
 
-**One developer CLI for MPX skills** — build, test, and publish both robot skills (WASM, the `move` family) and merchant web skills (AWA, the `web` family).
+**One developer CLI for MPX skills** — scaffold, build, test and publish robot skills
+(WASM, the `move` family) and merchant web skills (AWA, the `web` family).
 
 ## Install
 
@@ -15,7 +16,7 @@ pipx install mpx            # recommended, works on Windows/macOS/Linux
 mpx signup <username>
 mpx login <username>
 mpx logout
-mpx publish [dir]           # auto-detects skill family from manifest.json
+mpx publish [dir]           # reads manifest.json to pick the skill family
 mpx search [query]
 mpx info <skill_id>
 mpx versions <skill_id>
@@ -43,14 +44,17 @@ mpx web down
 
 ## Scaffolding
 
-`mpx move init` and `mpx web init` share one contract — same flags, prompts,
-file writer, slug-collision check, exit codes and console summary:
+Both `init` commands follow one contract: same flags, same prompt order, same
+slug-collision check, same exit codes, same console summary.
 
 ```bash
-mpx move init <name> --lang c|wat|ts      # WASM project (README.md, Makefile, src/, include/)
-mpx web init <domain> | <slug>@<domain>   # AWA project (manifest.json, skill.js, GUIDE.md, README.md)
+mpx move init <name> --lang c|wat|ts      # -> Makefile, src/, include/, GUIDE.md
+mpx web init <domain> | <slug>@<domain>   # -> manifest.json, skill.js, GUIDE.md
+```
 
-# shared flags
+Flags shared by both:
+
+```bash
 --dir/-d DIR      output directory (default: ./<target>)
 --slug/-s SLUG    marketplace slug (default: derived from name/domain)
 --title/-t TITLE  marketplace title
@@ -58,33 +62,36 @@ mpx web init <domain> | <slug>@<domain>   # AWA project (manifest.json, skill.js
 --yes/-y          accept defaults, never prompt
 ```
 
-Without `--yes` (and on a TTY) both prompts for slug → title → version, and both
-warn when the slug is already taken on the gateway. An existing target directory
-fails with exit code `1`.
+On a TTY without `--yes`, both prompt for slug → title → version and warn when the
+slug is already taken on the gateway. An existing target directory fails with
+exit code `1`.
 
 ## Project metadata
 
-Every scaffolded project has a `manifest.json` that `mpx publish` reads — `slug`,
-`title`, `version`, `readme`, `skill_type`, `source_language` (plus `domain`,
-`actions`, `capabilities`, `urls`, `timeout`, `memoryLimitMB` for web skills).
+Each scaffolded project has a `manifest.json` that `mpx publish` reads:
 
-Generated `README.md` (move) and `GUIDE.md` (web) each embed an
-**"Updating this README and the manifest metadata"** section: the field table,
-a checklist of what to update when behavior changes, and how to re-publish.
+- **Both families** — `slug`, `title`, `version`, `readme`, `skill_type`,
+  `source_language`
+- **Web only** — `domain`, `actions`, `capabilities`, `urls`, `timeout`,
+  `memoryLimitMB`
 
-Edit metadata from the CLI instead of by hand:
+The generated `GUIDE.md` documents its family's fields and ends with an
+**"Updating this GUIDE and the manifest metadata"** section: the field table, a
+checklist for behavior changes, and how to re-publish.
+
+Edit metadata through the CLI rather than by hand:
 
 ```bash
-mpx move update-manifest .        # or: mpx web update-manifest . / mpx update-manifest .
+mpx update-manifest .        # or: mpx move update-manifest . / mpx web update-manifest .
 ```
 
-It prompts per field with the current value as the default; pass
-`--slug/--title/--version/--readme/--domain` for scripted updates, `--dry-run`
-to preview. Keep the README/GUIDE prose in sync manually — no generator rewrites it.
+It prompts per field with the current value as the default. For scripted updates
+pass `--slug/--title/--version/--readme/--domain`, and `--dry-run` to preview.
+Keep the GUIDE prose in sync manually — no generator rewrites it.
 
 ## Prerequisites
 
-- Python ≥ 3.10 (no external packages — stdlib only)
+- Python ≥ 3.10 (stdlib only, no external packages)
 - Docker (toolchain image for `mpx move build`; AWA worker + GCS for `mpx web`)
 
 ## Design
