@@ -18,6 +18,15 @@
  *       robot_gait((int)"none");
  *   }
  *
+ * ABI v2 (MPX_ABI_VERSION 2): every function below returns ``int`` — 0 on
+ * success, a negative error code otherwise. All seventeen that used to be
+ * declared ``void`` (print, robot_gait, robot_set_config, robot_delay_ms and
+ * friends) return int too. The firmware registers them with an i32 result, and
+ * WAMR refuses to link a module whose import type does not match the symbol
+ * exactly, so a skill compiled against an older ``void`` header traps on its
+ * first host call with "failed to call unlinked import function". Rebuild
+ * after updating this header; do not mix v1 and v2 objects.
+ *
  * Compile with WASI SDK:
  *   /opt/wasi-sdk/bin/clang \
  *       --target=wasm32-wasip1 \
@@ -42,12 +51,12 @@ extern "C" {
  * @brief Print a message to the robot's log (ESP_LOGI).
  *
  * The firmware registers this function as ``"print"`` under module ``"env"``.
- * WAMR sig: "($i)" — the string pointer is auto-converted to a native pointer.
+ * WAMR sig: "($i)i" — the string pointer is auto-converted to a native pointer.
  *
  * @param ptr  Native pointer to the string (cast with (int))
  * @param len  String length in bytes
  */
-extern void print(int ptr, int len);
+extern int print(int ptr, int len);
 
 /** Convenience wrapper — accepts ``const char *`` directly. */
 static inline void MPX_print(const char *str, int len) {
@@ -62,8 +71,8 @@ static inline void MPX_print(const char *str, int len) {
 /**
  * @brief Start a gait by name.
  *
- * Wasm import:  extern void robot_gait(int name_ptr);
- * WAMR sig:     "($)"  — name string (auto-converted)
+ * Wasm import:  extern int robot_gait(int name_ptr);
+ * WAMR sig:     "($)i"  — name string (auto-converted)
  *
  * Valid names:
  *   "none"       Stop all gait
@@ -111,7 +120,7 @@ static inline void MPX_print(const char *str, int len) {
  *   "wiggleL" / "wiggleR"       One-sided wiggle
  *   "buttshrugL" / "buttshrugR" One-sided butt shrug
  */
-extern void robot_gait(int name_ptr);
+extern int robot_gait(int name_ptr);
 
 /**
  * @brief Get current gait mode as integer.
@@ -128,42 +137,42 @@ extern int robot_get_mode(void);
  *
  * Angles are in degrees and firmware-clamped to safe limits:
  * roll +/-25, pitch +/-20, yaw +/-30.
- * WAMR sig: "(fff)"
+ * WAMR sig: "(fff)i"
  */
-extern void robot_set_body_pose(float roll_deg, float pitch_deg, float yaw_deg);
+extern int robot_set_body_pose(float roll_deg, float pitch_deg, float yaw_deg);
 
 /**
  * @brief Set the roll/pitch/yaw slew speed in degrees per second.
  *
- * Wasm import:  extern void robot_set_attitude_speed(int dps);
- * WAMR sig:     "(i)"
+ * Wasm import:  extern int robot_set_attitude_speed(int dps);
+ * WAMR sig:     "(i)i"
  *
  * 0 (default) = instant: poses snap straight to the target.
  * >0 makes robot_roll/pitch/yaw/attitude GLIDE to the target at this speed,
  * so repeated pose updates ease smoothly instead of jumping. Persists until
  * changed, so set it once near the start of your skill.
  */
-extern void robot_set_attitude_speed(int dps);
+extern int robot_set_attitude_speed(int dps);
 /**
  * @brief Per-axis roll/pitch/yaw slew speed in degrees per second.
  *
- * Wasm import:  extern void robot_set_attitude_speed_xyz(int roll_dps,
+ * Wasm import:  extern int robot_set_attitude_speed_xyz(int roll_dps,
  *                   int pitch_dps, int yaw_dps);
- * WAMR sig:     "(iii)"
+ * WAMR sig:     "(iii)i"
  *
  * Like robot_set_attitude_speed() but each axis has its own speed, so e.g.
  * yaw can glide slowly while roll/pitch stay instant. 0 on an axis = snap.
  */
-extern void robot_set_attitude_speed_xyz(int roll_dps, int pitch_dps, int yaw_dps);
+extern int robot_set_attitude_speed_xyz(int roll_dps, int pitch_dps, int yaw_dps);
 
 /* ── Configuration ───────────────────────────────────────────── */
 
 /**
  * @brief Set all gait parameters at once.
  *
- * Wasm import:  extern void robot_set_config(int period, int height,
+ * Wasm import:  extern int robot_set_config(int period, int height,
  *                   int up_height, int stride, int tilt);
- * WAMR sig:     "(iiiii)"
+ * WAMR sig:     "(iiiii)i"
  *
  * @param period     Gait period in milliseconds (e.g. 100)
  * @param height     Body height in millimeters (e.g. 70)
@@ -171,7 +180,7 @@ extern void robot_set_attitude_speed_xyz(int roll_dps, int pitch_dps, int yaw_dp
  * @param stride     Stride length in millimeters (e.g. 10)
  * @param tilt       Max tilt angle in degrees (e.g. 10)
  */
-extern void robot_set_config(int period, int height,
+extern int robot_set_config(int period, int height,
                              int up_height, int stride, int tilt);
 
 /** @brief Get gait period in ms.  WAMR sig: "()i" */
@@ -194,30 +203,30 @@ extern int robot_get_tilt(void);
 /**
  * @brief Set a servo's target angle.
  *
- * Wasm import:  extern void robot_set_servo_angle(int id, int centideg);
- * WAMR sig:     "(ii)"
+ * Wasm import:  extern int robot_set_servo_angle(int id, int centideg);
+ * WAMR sig:     "(ii)i"
  *
  * @param id        Servo ID (1-12)
  * @param centideg  Target angle in centidegrees (e.g. 4500 = 45.00°)
  */
-extern void robot_set_servo_angle(int id, int centideg);
+extern int robot_set_servo_angle(int id, int centideg);
 
 /**
  * @brief Send all buffered servo commands to the bus.
- * WAMR sig:     "()"
+ * WAMR sig:     "()i"
  */
-extern void robot_flush(void);
+extern int robot_flush(void);
 
 /**
  * @brief Set servo movement speed.
  *
- * Wasm import:  extern void robot_set_servo_speed(int id, int speed);
- * WAMR sig:     "(ii)"
+ * Wasm import:  extern int robot_set_servo_speed(int id, int speed);
+ * WAMR sig:     "(ii)i"
  *
  * @param id     Servo ID (1-12)
  * @param speed  0 = max speed, higher values = slower
  */
-extern void robot_set_servo_speed(int id, int speed);
+extern int robot_set_servo_speed(int id, int speed);
 
 /**
  * @brief Read a servo's current position.
@@ -301,13 +310,13 @@ extern int robot_read_current(int id);
 /**
  * @brief Set angular offset for a servo.
  *
- * Wasm import:  extern void robot_set_offset(int id, int centideg);
- * WAMR sig:     "(ii)"
+ * Wasm import:  extern int robot_set_offset(int id, int centideg);
+ * WAMR sig:     "(ii)i"
  *
  * @param id        Servo ID (1-12)
  * @param centideg  Offset in centidegrees (e.g. 150 = 1.50°)
  */
-extern void robot_set_offset(int id, int centideg);
+extern int robot_set_offset(int id, int centideg);
 
 /**
  * @brief Get angular offset for a servo.
@@ -336,8 +345,8 @@ extern int robot_ping_servo(int id);
 /**
  * @brief Block the WASM thread for a real-time delay.
  *
- * Wasm import:  extern void robot_delay_ms(int ms);
- * WAMR sig:     "(i)"
+ * Wasm import:  extern int robot_delay_ms(int ms);
+ * WAMR sig:     "(i)i"
  *
  * IMPORTANT: This is the ONLY reliable way to pause between gait
  * commands from a WASM skill. Pure-WASM busy-loops run at near-zero
@@ -345,53 +354,53 @@ extern int robot_ping_servo(int id);
  *
  * @param ms  Milliseconds to block (uses vTaskDelay internally)
  */
-extern void robot_delay_ms(int ms);
+extern int robot_delay_ms(int ms);
 
 /* ── Inverse Kinematics (per-leg) ──────────────────────────────── */
 
 /**
  * @brief Front-right leg IK target.
  *
- * Wasm import:  extern void robot_ik_fr(float x, float th0, float z);
- * WAMR sig:     "(fff)"
+ * Wasm import:  extern int robot_ik_fr(float x, float th0, float z);
+ * WAMR sig:     "(fff)i"
  *
  * @param x    Forward/backward position in mm
  * @param th0  Hip rotation angle in degrees
  * @param z    Height in mm
  */
-extern void robot_ik_fr(float x, float th0, float z);
+extern int robot_ik_fr(float x, float th0, float z);
 
 /**
  * @brief Front-left leg IK target.
  *
- * Wasm import:  extern void robot_ik_fl(float x, float th0, float z);
- * WAMR sig:     "(fff)"
+ * Wasm import:  extern int robot_ik_fl(float x, float th0, float z);
+ * WAMR sig:     "(fff)i"
  */
-extern void robot_ik_fl(float x, float th0, float z);
+extern int robot_ik_fl(float x, float th0, float z);
 
 /**
  * @brief Rear-right leg IK target.
  *
- * Wasm import:  extern void robot_ik_rr(float x, float th0, float z);
- * WAMR sig:     "(fff)"
+ * Wasm import:  extern int robot_ik_rr(float x, float th0, float z);
+ * WAMR sig:     "(fff)i"
  */
-extern void robot_ik_rr(float x, float th0, float z);
+extern int robot_ik_rr(float x, float th0, float z);
 
 /**
  * @brief Rear-left leg IK target.
  *
- * Wasm import:  extern void robot_ik_rl(float x, float th0, float z);
- * WAMR sig:     "(fff)"
+ * Wasm import:  extern int robot_ik_rl(float x, float th0, float z);
+ * WAMR sig:     "(fff)i"
  */
-extern void robot_ik_rl(float x, float th0, float z);
+extern int robot_ik_rl(float x, float th0, float z);
 
 /* ── IMU ───────────────────────────────────────────────────────── */
 
 /**
  * @brief Read IMU 6-DOF data into a WASM buffer.
  *
- * Wasm import:  extern void robot_imu_read(int buffer_ptr);
- * WAMR sig:     "(i)"
+ * Wasm import:  extern int robot_imu_read(int buffer_ptr);
+ * WAMR sig:     "(i)i"
  *
  * Buffer must be at least 6 × 4 = 24 bytes. Layout:
  *   float[0] = ax (accel X, g)
@@ -401,15 +410,15 @@ extern void robot_ik_rl(float x, float th0, float z);
  *   float[4] = gy (gyro Y, dps)
  *   float[5] = gz (gyro Z, dps)
  */
-extern void robot_imu_read(int buffer_ptr);
+extern int robot_imu_read(int buffer_ptr);
 
 /**
  * @brief Print the latest IMU data to the robot's log.
  *
- * Wasm import:  extern void robot_imu_print(void);
- * WAMR sig:     "()"
+ * Wasm import:  extern int robot_imu_print(void);
+ * WAMR sig:     "()i"
  */
-extern void robot_imu_print(void);
+extern int robot_imu_print(void);
 
 /* ═══════════════════════════════════════════════════════════════════
  *  PART 2 — High-Level Abstractions
